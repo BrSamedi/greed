@@ -20,7 +20,6 @@ import nuconfig
 
 log = logging.getLogger(__name__)
 
-
 class StopSignal:
     """A data class that should be sent to the worker when the conversation has to be stopped abnormally."""
 
@@ -446,10 +445,10 @@ class Worker(threading.Thread):
             # Create a keyboard with the user main menu
             keyboard = [[telegram.KeyboardButton(self.loc.get("menu_order"))],
                         [telegram.KeyboardButton(self.loc.get("menu_order_status"))],
-                        [telegram.KeyboardButton(self.loc.get("menu_add_credit"))],
-                        [telegram.KeyboardButton(self.loc.get("menu_language"))],
-                        [telegram.KeyboardButton(self.loc.get("menu_help")),
-                         telegram.KeyboardButton(self.loc.get("menu_bot_info"))]]
+                        # [telegram.KeyboardButton(self.loc.get("menu_add_credit"))],
+                        # [telegram.KeyboardButton(self.loc.get("menu_language"))],
+                        [telegram.KeyboardButton(self.loc.get("menu_help"))]]
+                        #  telegram.KeyboardButton(self.loc.get("menu_bot_info"))]]
             # Send the previously created keyboard to the user (ensuring it can be clicked only 1 time)
             self.bot.send_message(self.chat.id,
                                   self.loc.get("conversation_open_user_menu",
@@ -459,10 +458,10 @@ class Worker(threading.Thread):
             selection = self.__wait_for_specific_message([
                 self.loc.get("menu_order"),
                 self.loc.get("menu_order_status"),
-                self.loc.get("menu_add_credit"),
-                self.loc.get("menu_language"),
+                # self.loc.get("menu_add_credit"),
+                # self.loc.get("menu_language"),
                 self.loc.get("menu_help"),
-                self.loc.get("menu_bot_info"),
+                # self.loc.get("menu_bot_info"),
             ])
             # After the user reply, update the user data
             self.update_user()
@@ -657,22 +656,23 @@ class Worker(threading.Thread):
         # Ensure the user has enough credit to make the purchase
         credit_required = self.__get_cart_value(cart) - self.user.credit
         # Notify user in case of insufficient credit
-        if credit_required > 0:
-            self.bot.send_message(self.chat.id, self.loc.get("error_not_enough_credit"))
-            # Suggest payment for missing credit value if configuration allows refill
-            if self.cfg["Payments"]["CreditCard"]["credit_card_token"] != "" \
-                    and self.cfg["Appearance"]["refill_on_checkout"] \
-                    and self.Price(self.cfg["Payments"]["CreditCard"]["min_amount"]) <= \
-                    credit_required <= \
-                    self.Price(self.cfg["Payments"]["CreditCard"]["max_amount"]):
-                self.__make_payment(self.Price(credit_required))
+        # if credit_required > 0:
+        #     self.bot.send_message(self.chat.id, self.loc.get("error_not_enough_credit"))
+        #     # Suggest payment for missing credit value if configuration allows refill
+        #     if self.cfg["Payments"]["CreditCard"]["credit_card_token"] != "" \
+        #             and self.cfg["Appearance"]["refill_on_checkout"] \
+        #             and self.Price(self.cfg["Payments"]["CreditCard"]["min_amount"]) <= \
+        #             credit_required <= \
+        #             self.Price(self.cfg["Payments"]["CreditCard"]["max_amount"]):
+        #         self.__make_payment(self.Price(credit_required))
         # If afer requested payment credit is still insufficient (either payment failure or cancel)
-        if self.user.credit < self.__get_cart_value(cart):
-            # Rollback all the changes
-            self.session.rollback()
-        else:
-            # User has credit and valid order, perform transaction now
-            self.__order_transaction(order=order, value=-int(self.__get_cart_value(cart)))
+        # if self.user.credit < self.__get_cart_value(cart):
+        #     # Rollback all the changes
+        #     self.session.rollback()
+        # else:
+        #     # User has credit and valid order, perform transaction now
+        #     self.__order_transaction(order=order, value=-int(self.__get_cart_value(cart)))
+        self.__order_transaction(order=order, value=-int(self.__get_cart_value(cart)))
 
     def __get_cart_value(self, cart):
         # Calculate total items value in cart
@@ -903,9 +903,9 @@ class Worker(threading.Thread):
                 keyboard.append([self.loc.get("menu_products")])
             if self.admin.receive_orders:
                 keyboard.append([self.loc.get("menu_orders")])
-            if self.admin.create_transactions:
-                keyboard.append([self.loc.get("menu_edit_credit")])
-                keyboard.append([self.loc.get("menu_transactions"), self.loc.get("menu_csv")])
+            # if self.admin.create_transactions:
+                # keyboard.append([self.loc.get("menu_edit_credit")])
+                # keyboard.append([self.loc.get("menu_transactions"), self.loc.get("menu_csv")])
             if self.admin.is_owner:
                 keyboard.append([self.loc.get("menu_edit_admins")])
             keyboard.append([self.loc.get("menu_user_mode")])
@@ -916,9 +916,9 @@ class Worker(threading.Thread):
             selection = self.__wait_for_specific_message([self.loc.get("menu_products"),
                                                           self.loc.get("menu_orders"),
                                                           self.loc.get("menu_user_mode"),
-                                                          self.loc.get("menu_edit_credit"),
-                                                          self.loc.get("menu_transactions"),
-                                                          self.loc.get("menu_csv"),
+                                                        #   self.loc.get("menu_edit_credit"),
+                                                        #   self.loc.get("menu_transactions"),
+                                                        #   self.loc.get("menu_csv"),
                                                           self.loc.get("menu_edit_admins")])
             # If the user has selected the Products option...
             if selection == self.loc.get("menu_products"):
@@ -1062,7 +1062,7 @@ class Worker(threading.Thread):
             product.description = description if not isinstance(description, CancelSignal) else product.description
             product.price = price if not isinstance(price, CancelSignal) else product.price
         # If a photo has been sent...
-        if isinstance(photo_list, list):
+        if photo_list and isinstance(photo_list, list):
             # Find the largest photo id
             largest_photo = photo_list[0]
             for photo in photo_list[1:]:
@@ -1426,10 +1426,10 @@ class Worker(threading.Thread):
                     f"{self.loc.boolmoji(admin.receive_orders)} {self.loc.get('prop_receive_orders')}",
                     callback_data="toggle_receive_orders"
                 )],
-                [telegram.InlineKeyboardButton(
-                    f"{self.loc.boolmoji(admin.create_transactions)} {self.loc.get('prop_create_transactions')}",
-                    callback_data="toggle_create_transactions"
-                )],
+                # [telegram.InlineKeyboardButton(
+                #     f"{self.loc.boolmoji(admin.create_transactions)} {self.loc.get('prop_create_transactions')}",
+                #     callback_data="toggle_create_transactions"
+                # )],
                 [telegram.InlineKeyboardButton(
                     f"{self.loc.boolmoji(admin.display_on_help)} {self.loc.get('prop_display_on_help')}",
                     callback_data="toggle_display_on_help"
